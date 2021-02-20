@@ -1,0 +1,2 @@
+# coding: utf-8
+{'_action': 'OPEN_TRADES', '_trades': {689109449: {'_magic': 123456, '_symbol': 'AUDCAD', '_lots': 0.01000000, '_type': 0, '_open_price': 0.98220000, '_open_time': '2021.01.05 14:42:54', '_SL': 0.97820000, '_TP': 0.99020000, '_pnl': -0.31000000, '_comment': 'zmq_connector-test33'}, 689070055: {'_magic': 123456, '_symbol': 'EURUSD', '_lots': 0.01000000, '_type': 0, '_open_price': 1.22846000, '_open_time': '2021.01.05 13:39:24', '_SL': 1.22446000, '_TP': 1.23646000, '_pnl': -1.78000000, '_comment': 'zmq_connector-test32'}}}

@@ -1,0 +1,1 @@
+{'_action': 'OPEN_TRADES', '_trades': {556754967: {'_magic': 123456, '_symbol': 'EURUSD', '_lots': 0.01000000, '_type': 1, '_open_price': 1.06924000, '_open_time': '2020.03.20 18:26:45', '_SL': 1.07324000, '_TP': 1.06124000, '_pnl': 0.02000000, '_comment': 'zmq_connector-test31-sell'}}}
