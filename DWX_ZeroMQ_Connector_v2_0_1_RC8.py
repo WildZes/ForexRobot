@@ -358,8 +358,10 @@ class DWX_ZeroMQ_Connector():
             # Execute
             self._DWX_MTX_SEND_COMMAND_(**self.temp_order_dict)
             
+            return self._myData
+            
         except KeyError:
-            pass
+            return self._myData
     
     # DEFAULT ORDER DICT
     def _generate_default_order_dict(self):
@@ -473,6 +475,7 @@ class DWX_ZeroMQ_Connector():
                         
                         # msg = self._PULL_SOCKET.recv_string(zmq.DONTWAIT)
                         msg = self.remote_recv(self._PULL_SOCKET)
+                        self._myData = msg
                         
                         # If data is returned, store as pandas Series
                         if msg != '' and msg != None:
@@ -504,6 +507,7 @@ class DWX_ZeroMQ_Connector():
                 
                 try:
                     msg = self._SUB_SOCKET.recv_string(zmq.DONTWAIT)
+                    self._myData=msg
                     
                     if msg != "":
                         _symbol, _data = msg.split(" ")
@@ -520,11 +524,11 @@ class DWX_ZeroMQ_Connector():
                         self._Market_Data_DB[_symbol][_timestamp] = (float(_bid), float(_ask))
                     
                 except zmq.error.Again:
-                    pass # resource temporarily unavailable, nothing to print
+                    print('resource temporarily unavailable, nothing to print')
                 except ValueError:
-                    pass # No data returned, passing iteration.
+                    print('No data returned, passing iteration.')
                 except UnboundLocalError:
-                    pass # _symbol may sometimes get referenced before being assigned.
+                    print('_symbol may sometimes get referenced before being assigned.')
                     
         print("\n++ [KERNEL] _DWX_ZMQ_Poll_Data_() Signing Out ++")
                 
@@ -634,6 +638,39 @@ class DWX_ZeroMQ_Connector():
     
     def _SPI_ZMQ_GET_OPED_(self):
         self.remote_send(self._PUSH_SOCKET, "GET_OPED;")
+        return self._myData
+        
+    ##########################################################################
+    
+    ##########################################################################
+    
+    def _SPI_ZMQ_GET_BID_(self, _symbol='EURUSD'):
+        
+        _msg = "{};{}".format('GET_BID',_symbol)
+        
+        self.remote_send(self._PUSH_SOCKET, _msg)
+        
+        return self._myData
+        
+    ##########################################################################
+
+    ##########################################################################
+    
+    def _SPI_ZMQ_GET_ASK_(self, _symbol='EURUSD'):
+        
+        _msg = "{};{}".format('GET_ASK',_symbol)
+        
+        self.remote_send(self._PUSH_SOCKET, _msg)
+        
+        return self._myData
+        
+    ##########################################################################
+
+    ##########################################################################
+    
+    def _SPI_ZMQ_GET_TIME_(self):
+        self.remote_send(self._PUSH_SOCKET, "GET_TIME;")
+        return self._myData
         
     ##########################################################################
 

@@ -270,6 +270,17 @@ void InterpretZmqMessage(Socket &pSocket, string &compArray[]) {
    //sending count off all opened and pending orders
    if (compArray[0] == "GET_OPED")
       InformPullClient(pSocket, IntegerToString(OrdersTotal()));
+   //sending ask
+   if (compArray[0] == "GET_ASK")
+      InformPullClient(pSocket, DoubleToString(MarketInfo(compArray[1],MODE_ASK)));
+   //sending bid
+   if (compArray[0] == "GET_BID")
+      InformPullClient(pSocket, DoubleToString(MarketInfo(compArray[1],MODE_BID)));
+   if (compArray[0] == "GET_TIME"){
+      string time_reply = TimeToStr(TimeCurrent(),TIME_DATE|TIME_SECONDS);
+      InformPullClient(pSocket, time_reply);
+      }
+      
    
    /* 02-08-2019 10:41 CEST - HEARTBEAT */
    if(compArray[0] == "HEARTBEAT")
@@ -479,6 +490,7 @@ string GetBidAsk(string symbol) {
 
 // Get data for request datetime range
 void DWX_GetData(string& compArray[], string& zmq_ret) {
+   //CSV file creation made by SPI to analyze data with python
    int file = FileOpen("data.csv", FILE_WRITE|FILE_CSV|FILE_ANSI, ',');
    // Trying MqlRates example from docs.mql4.com/ru/constants/structures/mqlrates
    
@@ -565,7 +577,6 @@ void DWX_GetData(string& compArray[], string& zmq_ret) {
                   rates[i].low  + "," + rates[i].close + "," + rates[i].tick_volume;
            FileWrite(file, row);
        }
-       Print("Copied ",ArraySize(rates)," bars");
    }
    FileClose(file);
          
@@ -578,7 +589,7 @@ void DWX_GetData(string& compArray[], string& zmq_ret) {
    int price_count = CopyClose(compArray[1], 
                   StrToInteger(compArray[2]), StrToTime(compArray[3]),
                   StrToTime(compArray[4]), price_array);
-   Print("Copied to price_array ",ArraySize(price_array)," prices");
+   //Print("Copied to price_array ",ArraySize(price_array)," prices");
    // Get timestamps
    int time_count = CopyTime(compArray[1], 
                   StrToInteger(compArray[2]), StrToTime(compArray[3]),
@@ -613,7 +624,7 @@ void DWX_GetData(string& compArray[], string& zmq_ret) {
 void InformPullClient(Socket& pSocket, string message) {
 
    ZmqMsg pushReply(StringFormat("%s", message));
-   
+
    pSocket.send(pushReply,true); // NON-BLOCKING
    
 }

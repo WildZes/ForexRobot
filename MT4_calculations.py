@@ -4,13 +4,22 @@ import numpy as np
 import os.path as op
 
 
-#Define trend direction
-def trend_dir(quotes):
+def time_to_num(time):
+    return mdates.datestr2num(time)
+
+
+def create_y_x_A_m_c(quotes):
     y = np.array(quotes[['Open', 'High', 'Low', 'Close']]).ravel()
     x = np.array(quotes.index).ravel()
     x = np.array([(lambda d: mdates.date2num(d))(d) for d in x for _ in (0,1,2,3)])
     A = np.vstack([x, np.ones(len(x))]).T
     m, c = np.linalg.lstsq(A, y, rcond=None)[0]
+    return y, x, A, m, c
+
+
+#Define trend direction
+def trend_dir(quotes):
+    _, _, _, m, _ = create_y_x_A_m_c(quotes)
     if m < 0:
         _dir = -1
     elif m > 0:
@@ -32,17 +41,6 @@ def get_df():
     raise NameError('get_df is broken')
 
 
-#Function gets m that is calculated the same way as it was calculated in treng_dir function
-def get_ength(quotes):
-    _quotes = quotes
-    y = np.array(_quotes[['Open', 'High', 'Low', 'Close']]).ravel()
-    x = np.array(_quotes.index).ravel()
-    x = np.array([(lambda d: mdates.date2num(d))(d) for d in x for _ in (0,1,2,3)])
-    A = np.vstack([x, np.ones(len(x))]).T
-    m, c = np.linalg.lstsq(A, y, rcond=None)[0]
-    return m
-
-
 #Function that helps to define change of trand direction (RSI < 70 and RSI > 30: OK)
 def RSI(series, period):
     delta = series.diff().dropna()
@@ -59,7 +57,36 @@ def RSI(series, period):
 
 #Function to estimate treshold strength and volume
 def get_m_v(strengthList, volumeList, all_df):
-    strengthList.append(abs(get_ength(all_df)))
+    _, _, _, m, _ = create_y_x_A_m_c(all_df)
+    strengthList.append(abs(m))
     tmp = all_df['Tick_Vol'].values
     volumeList += tmp.tolist()
     return np.median(strengthList), np.median(volumeList), strengthList, volumeList
+
+
+#Function to check if price is in right place relative trend line
+def check_price(price, time, m, c):
+    trend_dot = time * m + c
+    if (price>trend_dot)&(m<0):
+        return True
+    if (price<trend_dot)&(m>0):
+        return True
+    return False
+
+
+#Function that checks, if price crossed trend line less than 5 times
+def traversal_fiveless(quotes):
+    y, x, A, m, c = create_y_x_A_m_c(quotes)
+    x_scale = pd.DataFrame(x).drop_duplicates()
+    primary = check_price(quotes.Close[0], x_scale[0].iloc[0], m, c)
+    traversal = 0
+    quotes['date_to_num'] = x_scale[0].values
+    for t in x_scale[0]:        
+        t_prim = check_price(quotes.Close.loc[quotes['date_to_num'] == t].values[0], t, m, c)
+        if primary == t_prim or primary:
+            continue
+        primary = t_prim
+        traversal += 1
+        if traversal > 4:
+            return False
+    return True
