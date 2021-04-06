@@ -61,7 +61,7 @@ def get_m_v(strengthList, volumeList, all_df):
     strengthList.append(abs(m))
     tmp = all_df['Tick_Vol'].values
     volumeList += tmp.tolist()
-    return np.median(strengthList), np.median(volumeList), strengthList, volumeList
+    return np.mean(strengthList), np.mean(volumeList), strengthList, volumeList
 
 
 #Function to check if price is in right place relative trend line

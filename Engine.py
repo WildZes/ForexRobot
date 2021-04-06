@@ -39,7 +39,7 @@ def open_trades_by_symbol(symbol, slope, intercept, trend_direction, m, v):
     while MT4.check_price(price, tick_time, slope, intercept):
         _, price = mt4_recv(price_func, 'tick_price', symbol=symbol)
         tick_time = MT4.time_to_num(mt4_recv(_zmq._SPI_ZMQ_GET_TIME_, 'time'))
-    log_data = mt4_recv(_zmq._DWX_MTX_NEW_TRADE_, 'order', order_type=_my_trade)
+    log_data = f_get(_zmq._DWX_MTX_NEW_TRADE_, order_type=_my_trade)
     log_data = log_data.rstrip() + f'calc_m: {m}, calc_v: {v}, slope: {slope}, \
         intercept: {intercept}, symbol: {symbol}, tick_time: {tick_time}\n'
     file_add(log_data)
@@ -61,8 +61,11 @@ def create_pool_list(pendingSymbols, oped):
 #Functionn to create followSymbol
 def create_FS(arrSymbol):
     followSymbol = []
+    testing_dict = {'symbols in trade': [], 'trend direction': [], 'RSI': [], 
+                    'price position': [], 'traversal': [], 'calculate m and v': []}
     for cur in currencyList:
         if cur in arrSymbol:
+            testing_dict['symbols in trade'].append(1)
             continue
         _zmq._DWX_MTX_SEND_MARKETDATA_REQUEST_(_symbol=cur, _timeframe=240,
                                                _start='2020.1.1', _end='2020.1.2')
@@ -76,17 +79,21 @@ def create_FS(arrSymbol):
         dir_D1 = MT4.trend_dir(df_D1)
         _, _, _, m_H4, c_H4 = MT4.create_y_x_A_m_c(df_H4)
         if (dir_H4 != dir_D1)or(dir_H4 == 0)or(dir_D1==0):
+            testing_dict['trend direction'].append(1)
             continue
         RSI = MT4.RSI(df_H4['Close'], len(df_H4['Close'])-1)
         if (RSI[0] > 70) or (RSI[0] < 30):
+            testing_dict['RSI'].append(1)
             continue
         _, ask = mt4_recv(_zmq._SPI_ZMQ_GET_ASK_, 'tick_price', symbol=cur)
         _, bid = mt4_recv(_zmq._SPI_ZMQ_GET_BID_, 'tick_price', symbol=cur)
         tick_time = MT4.time_to_num(mt4_recv(_zmq._SPI_ZMQ_GET_TIME_, 'time'))
         if (not MT4.check_price(ask, tick_time, m_H4, c_H4)) or \
            (not MT4.check_price(bid, tick_time, m_H4, c_H4)):
+               testing_dict['price position'].append(1)
                continue
         if not MT4.traversal_fiveless(df_H4):
+            testing_dict['traversal'].append(1)
             continue
         a, b = [], []
         for tf in timeframeList:
@@ -96,6 +103,7 @@ def create_FS(arrSymbol):
             any_df = MT4.get_df()
             m, v, a, b = MT4.get_m_v(a, b, any_df)
         if (df_H4['Tick_Vol'][1] < v) or (m_H4 < m):
+            testing_dict['calculate m and v'].append(1)
             continue
         to_pending = {"Symbol": cur, "Strength": m_H4, "Intercept": c_H4, "Trend_dir": dir_H4,
                       "Volume": df_H4['Tick_Vol'][0], "Calc_m": m, "Calc_v": v}
@@ -105,7 +113,8 @@ def create_FS(arrSymbol):
 
 #Something to upgrade MT4 reply solution
 def mt4_recv(command, command_type, order_type=None, symbol=None):
-    for i in range(1000):
+    for i in range(10000):
+        sleep(0.1)
         if command_type == 'oped':
             oped = command()
             if not oped.isnumeric():
@@ -131,7 +140,7 @@ def mt4_recv(command, command_type, order_type=None, symbol=None):
             command(_order=order_type)
             sleep(5)
             return _zmq._myData
-        print('Error to debug')
+    print('Error to debug')
         
 
 
